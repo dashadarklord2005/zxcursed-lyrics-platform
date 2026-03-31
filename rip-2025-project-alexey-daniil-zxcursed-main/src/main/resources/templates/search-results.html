@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Search Results - ZXCURSED Lyrics</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-search">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" th:value="${query}" placeholder="Search songs...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-auth">
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/profile}">Profile</a>
+                <a th:href="@{/logout}">Logout</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Login</a>
+                <a th:href="@{/register}">Register</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="search-results-container">
+    <h1>Search Results for "<span th:text="${query}"></span>"</h1>
+
+    <div th:if="${songs != null && !songs.empty}">
+        <div class="search-results">
+            <div th:each="song : ${songs}" class="search-result-item">
+                <a th:href="@{/song/{id}(id=${song.id})}" th:text="${song.title}"></a>
+                <span th:if="${song.album}" class="album-name">
+                        from <a th:href="@{/album/{id}(id=${song.album.id})}" th:text="${song.album.title}"></a>
+                    </span>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${songs == null || songs.empty}" class="no-results">
+        <p>No songs found for "<span th:text="${query}"></span>"</p>
+        <p>Try searching for other songs or check the spelling.</p>
+    </div>
+
+    <div class="back-to-home">
+        <a th:href="@{/}" class="btn-primary">Back to Home</a>
+    </div>
+</main>
+</body>
+</html>

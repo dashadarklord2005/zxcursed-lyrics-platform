@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Profile - ZXCURSED Lyrics</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-auth">
+            <a th:href="@{/}">Home</a>
+            <a th:href="@{/logout}">Logout</a>
+        </div>
+    </nav>
+</header>
+
+<main class="profile-container">
+    <div class="profile-header">
+        <h1>User Profile</h1>
+    </div>
+
+    <!-- Уведомления -->
+    <div th:if="${param.success}" class="notification success">
+        <span th:if="${param.success[0] == 'avatar_updated'}">✅ Avatar updated successfully!</span>
+        <span th:if="${param.success[0] == 'profile_updated'}">✅ Profile updated successfully!</span>
+    </div>
+
+    <div th:if="${param.error}" class="notification error">
+        <span th:if="${param.error[0] == 'upload_failed'}">❌ Failed to upload avatar. Please try again.</span>
+    </div>
+
+    <div class="profile-content">
+        <div class="profile-main">
+            <div class="profile-avatar-section">
+                <div class="avatar-container">
+                    <img th:if="${user.profilePicture != null}" th:src="${user.profilePicture}"
+                         alt="Profile Picture" id="avatarImage">
+                    <img th:unless="${user.profilePicture != null}" th:src="@{/images/default-avatar.jpg}"
+                         alt="Profile Picture" id="avatarImage">
+                </div>
+
+                <form th:action="@{/upload-avatar}" method="post" enctype="multipart/form-data" class="avatar-upload-form">
+                    <div class="form-group">
+                        <label for="avatar">Update Avatar</label>
+                        <input type="file" id="avatar" name="avatar" accept="image/*" onchange="previewImage(this)" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Upload Avatar</button>
+                </form>
+            </div>
+
+            <div class="profile-info-section">
+                <div class="profile-card">
+                    <h2 th:text="${user.username}">Username</h2>
+
+                    <form th:action="@{/update-profile}" method="post" class="bio-form">
+                        <div class="form-group">
+                            <label for="bio"><strong>Profile Description</strong></label>
+                            <textarea id="bio" name="bio" placeholder="Tell us about yourself..."
+                                      th:text="${user.bio}"></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">Update Profile</button>
+                    </form>
+
+                    <div class="profile-stats">
+                        <h3>Profile Statistics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-number" th:text="${user.albumComments.size()}">0</span>
+                                <span class="stat-label">Album Comments</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number" th:text="${user.songComments.size()}">0</span>
+                                <span class="stat-label">Song Comments</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatarImage').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+</body>
+</html>

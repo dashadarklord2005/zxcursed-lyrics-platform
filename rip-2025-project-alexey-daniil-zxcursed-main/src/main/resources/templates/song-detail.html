@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${song.title} + ' - ZXCURSED'">Song</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-search">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" placeholder="Search songs...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-auth">
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/profile}">Profile</a>
+                <a th:href="@{/logout}">Logout</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Login</a>
+                <a th:href="@{/register}">Register</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="song-detail-container">
+    <!-- Заголовок песни по центру -->
+    <section class="song-header">
+        <h1 class="song-title" th:text="${song.title}">Song Title</h1>
+        <div class="song-meta" th:if="${song.album}">
+            <span>From album: </span>
+            <a th:href="@{/album/{id}(id=${song.album.id})}" th:text="${song.album.title}"></a>
+        </div>
+    </section>
+
+    <!-- Основной контент: текст песни и описание -->
+    <div class="song-content-layout">
+        <!-- Левая колонка: текст песни -->
+        <div class="lyrics-section">
+            <div class="section-header">
+                <h2>Lyrics</h2>
+                <div class="section-actions">
+                    <button class="btn-secondary" onclick="copyLyrics()">Copy Text</button>
+                </div>
+            </div>
+            <div class="lyrics-container">
+                <div th:if="${song.lyrics}" style="white-space: pre-wrap; line-height: 1.8;" th:utext="${song.lyrics}">
+                </div>
+                <div th:unless="${song.lyrics}" class="no-lyrics">
+                    <div class="no-content-icon">🎵</div>
+                    <p>Lyrics not available yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: описание песни -->
+        <div class="song-info-section">
+            <div class="song-description-card">
+                <h3>About this Song</h3>
+                </div>
+
+                <!-- Рейтинг песни -->
+                <div class="rating-widget">
+                    <h4>Community Rating</h4>
+                    <div class="rating-display">
+                        <div class="rating-stars">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                  th:classappend="${i <= (averageRating != null ? averageRating : 0)} ? 'filled' : ''"
+                                  class="star">
+                                🧛
+                            </span>
+                        </div>
+                        <div class="rating-info">
+                            <span class="rating-value" th:if="${averageRating != null}"
+                                  th:text="${#numbers.formatDecimal(averageRating, 1, 1)} + '/5'">0.0/5</span>
+                            <span class="rating-value" th:unless="${averageRating != null}">No ratings</span>
+                            <span class="rating-count" th:if="${ratingCount > 0}"
+                                  th:text="'(' + ${ratingCount} + ' votes)'">(0 votes)</span>
+                        </div>
+                    </div>
+
+                    <div sec:authorize="isAuthenticated()" class="rating-form">
+                        <form th:action="@{/song/{id}/rate(id=${song.id})}" method="post">
+                            <div class="rating-input">
+                                <span class="rating-label">Your rating:</span>
+                                <div class="star-rating">
+                                    <input type="radio" id="star5" name="value" value="5" th:checked="${userRating == 5}">
+                                    <label for="star5">🧛</label>
+                                    <input type="radio" id="star4" name="value" value="4" th:checked="${userRating == 4}">
+                                    <label for="star4">🧛</label>
+                                    <input type="radio" id="star3" name="value" value="3" th:checked="${userRating == 3}">
+                                    <label for="star3">🧛</label>
+                                    <input type="radio" id="star2" name="value" value="2" th:checked="${userRating == 2}">
+                                    <label for="star2">🧛</label>
+                                    <input type="radio" id="star1" name="value" value="1" th:checked="${userRating == 1}">
+                                    <label for="star1">🧛</label>
+                                </div>
+                                <button type="submit" class="btn-rating">Rate</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Дополнительная информация -->
+                <div class="song-details" th:if="${song.album}">
+                    <h4>Song Details</h4>
+                    <div class="detail-item">
+                        <strong>Album:</strong>
+                        <a th:href="@{/album/{id}(id=${song.album.id})}" th:text="${song.album.title}"></a>
+                    </div>
+                    <div class="detail-item" th:if="${song.album.releaseDate}">
+                        <strong>Release Date:</strong>
+                        <span th:text="${#temporals.format(song.album.releaseDate, 'dd MMMM yyyy')}"></span>
+                    </div>
+                    <div class="detail-item">
+                        <strong>Total Comments:</strong>
+                        <span th:text="${comments.size()}">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция комментариев - ПЕРЕМЕЩЕНА ПОСЛЕ ОСНОВНОГО КОНТЕНТА -->
+    <div class="comments-section">
+        <div class="section-header">
+            <h3>Community Discussion</h3>
+            <div class="comments-count" th:text="'(' + ${comments.size()} + ' comments)'"></div>
+        </div>
+
+        <!-- Форма добавления комментария -->
+        <div sec:authorize="isAuthenticated()" class="comment-form">
+            <form th:action="@{/song/{id}/comment(id=${song.id})}" method="post">
+                <div class="form-header">
+                    <strong>Add your comment</strong>
+                    <span class="char-count">0/1000</span>
+                </div>
+                <textarea name="text" placeholder="Share your thoughts about this song... What does it mean to you? What emotions does it evoke?"
+                          required maxlength="1000" id="commentText"></textarea>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Post Comment</button>
+                </div>
+            </form>
+        </div>
+
+        <div sec:authorize="!isAuthenticated()" class="login-prompt">
+            <div class="login-icon">🔒</div>
+            <p>
+                <a th:href="@{/login}">Log in</a> to join the discussion and share your thoughts
+            </p>
+        </div>
+
+        <!-- Список комментариев -->
+        <div class="comments-list">
+            <div th:each="comment : ${comments}" class="comment-item">
+                <div class="comment-avatar">
+                    <img th:if="${comment.user.profilePicture}" th:src="${comment.user.profilePicture}" alt="Avatar">
+                    <img th:unless="${comment.user.profilePicture}" th:src="@{/images/default-avatar.jpg}" alt="Avatar">
+                </div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <div class="comment-user-info">
+                            <a th:href="@{/user/{username}(username=${comment.user.username})}" class="comment-user-link"
+                               th:text="${comment.user.username}">User</a>
+                            <span class="comment-date"
+                                  th:text="${#temporals.format(comment.createdAt, 'dd MMM yyyy, HH:mm')}">
+                                Date
+                            </span>
+                        </div>
+                        <div class="comment-actions" sec:authorize="isAuthenticated()">
+                            <span th:if="${#authentication.principal.username == comment.user.username}">
+                                <form th:action="@{/song/comment/{id}/delete(id=${comment.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                                </form>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="comment-text" th:text="${comment.text}"></div>
+                </div>
+            </div>
+
+            <div th:if="${comments.empty}" class="no-comments">
+                <div class="no-comments-icon">💬</div>
+                <h4>No comments yet</h4>
+                <p>Be the first to share your thoughts about this song!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Счетчик символов для комментария
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('commentText');
+        const charCount = document.querySelector('.char-count');
+
+        if (textarea && charCount) {
+            textarea.addEventListener('input', function() {
+                const length = this.value.length;
+                charCount.textContent = length + '/1000';
+
+                if (length > 1000) {
+                    charCount.style.color = '#e74c3c';
+                } else if (length > 800) {
+                    charCount.style.color = '#f39c12';
+                } else {
+                    charCount.style.color = '#666';
+                }
+            });
+        }
+    });
+
+    // Функция копирования текста песни
+    function copyLyrics() {
+        const lyricsElement = document.querySelector('.lyrics-container');
+        if (lyricsElement) {
+            const lyricsText = lyricsElement.textContent || lyricsElement.innerText;
+            navigator.clipboard.writeText(lyricsText).then(function() {
+                // Показываем временное уведомление
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#27ae60';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+    }
+</script>
+</body>
+</html>

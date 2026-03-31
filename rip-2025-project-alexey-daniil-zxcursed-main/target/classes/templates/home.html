@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>ZXCURSED - LyricAnnotations</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-search">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" placeholder="Search songs...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-auth">
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/profile}">Profile</a>
+                <a th:href="@{/logout}">Logout</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Login</a>
+                <a th:href="@{/register}">Register</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="home-container">
+    <!-- Уведомления -->
+    <div th:if="${param.registered}" class="notification success">
+        <p>🎉 Registration successful! Welcome to ZXCCURSED Lyrics!</p>
+    </div>
+
+    <div th:if="${param.login}" class="notification success">
+        <p>👋 Welcome back! Great to see you again!</p>
+    </div>
+
+    <div th:if="${param.logout}" class="notification info">
+        <p>👋 You have been logged out successfully.</p>
+    </div>
+
+    <!-- Artist Hero Section -->
+    <section class="artist-hero">
+        <img th:src="@{/images/zxc-cursed.jpg}" alt="ZXCURSED" class="artist-image-main">
+        <div class="artist-info">
+            <h1 class="artist-name" th:text="${artistName}">ZXCURSED</h1>
+            <p class="artist-bio" th:text="${artistBio}">Украинский исполнитель родом из Киева, ключевая фигура в андерграундном движении «dead inside». В основном пишет фонк. В его треках можно найти большое количество отсылок на аниме, Dota 2 и культуру «мёртвых внутри».
+
+            </p>
+            <div class="artist-stats">
+                <div class="stat">
+                    <span class="stat-number" th:text="${albums.size()}">0</span>
+                    <span class="stat-label">Albums</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" th:text="${songs.size()}">0</span>
+                    <span class="stat-label">Songs</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Albums Section -->
+    <section class="content-section">
+        <div class="section-header">
+            <h2>Latest Albums</h2>
+            <span class="section-count" th:text="${albums.size() + ' albums'}"></span>
+        </div>
+        <div class="albums-grid">
+            <div th:each="album : ${albums}" class="album-card">
+                <a th:href="@{/album/{id}(id=${album.id})}">
+                    <img th:src="${album.coverImage}" th:alt="${album.title}" class="album-cover">
+                    <div class="album-info">
+                        <h3 class="album-title" th:text="${album.title}"></h3>
+                        <span class="album-year" th:text="${#temporals.format(album.releaseDate, 'yyyy')}"></span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Songs Section -->
+    <section class="content-section">
+        <div class="section-header">
+            <h2>All Songs</h2>
+            <span class="section-count" th:text="${songs.size() + ' songs'}"></span>
+        </div>
+        <button onclick="toggleSongs()" class="toggle-btn">Show/Hide All Songs</button>
+        <div id="songs-list" class="songs-list hidden">
+            <div class="songs-grid">
+                <div th:each="song, stat : ${songs}" th:if="${stat.index < 6}" class="song-item">
+                    <a th:href="@{/song/{id}(id=${song.id})}" th:text="${song.title}"></a>
+                    <span th:if="${song.album}" class="song-album" th:text="${song.album.title}"></span>
+                </div>
+            </div>
+
+            <div id="all-songs" class="hidden">
+                <div class="songs-grid">
+                    <div th:each="song, stat : ${songs}" th:if="${stat.index >= 6}" class="song-item">
+                        <a th:href="@{/song/{id}(id=${song.id})}" th:text="${song.title}"></a>
+                        <span th:if="${song.album}" class="song-album" th:text="${song.album.title}"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    function toggleSongs() {
+        const songsList = document.getElementById('songs-list');
+        const allSongs = document.getElementById('all-songs');
+
+        songsList.classList.toggle('hidden');
+        if (!songsList.classList.contains('hidden')) {
+            allSongs.classList.remove('hidden');
+        }
+    }
+</script>
+</body>
+</html>

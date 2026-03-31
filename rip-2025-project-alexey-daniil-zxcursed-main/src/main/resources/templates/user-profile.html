@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${user.username} + ' - Profile'">User Profile</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-search">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" placeholder="Search songs...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-auth">
+            <a th:href="@{/}">Home</a>
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/profile}">My Profile</a>
+                <a th:href="@{/logout}">Logout</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Login</a>
+                <a th:href="@{/register}">Register</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="user-profile-container">
+    <!-- Профиль пользователя -->
+    <section class="user-profile-header">
+        <div class="profile-avatar-large">
+            <img th:if="${user.profilePicture}" th:src="${user.profilePicture}" alt="Profile Picture">
+            <img th:unless="${user.profilePicture}" th:src="@{/images/default-avatar.jpg}" alt="Profile Picture">
+        </div>
+        <div class="profile-info-main">
+            <h1 class="profile-username" th:text="${user.username}">Username</h1>
+
+            <div class="profile-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" th:text="${totalComments}">0</div>
+                    <div class="stat-label">Total Comments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" th:text="${albumCommentsCount}">0</div>
+                    <div class="stat-label">Album Comments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" th:text="${songCommentsCount}">0</div>
+                    <div class="stat-label">Song Comments</div>
+                </div>
+                <!-- Убрана ячейка Member since -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Биография пользователя -->
+    <section class="profile-bio-section">
+        <h2>About</h2>
+        <div class="bio-content">
+            <p th:if="${user.bio}" th:text="${user.bio}"></p>
+            <p th:unless="${user.bio}" class="no-bio">
+                This user hasn't written a bio yet.
+            </p>
+        </div>
+    </section>
+
+    <!-- Недавняя активность -->
+    <section class="recent-activity">
+        <h2>Recent Activity</h2>
+        <div class="activity-list">
+            <div class="activity-item">
+                <span class="activity-icon">💬</span>
+                <span>Commented on <strong th:text="${totalComments}">0</strong> songs and albums</span>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

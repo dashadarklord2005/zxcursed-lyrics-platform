@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${album.title} + ' - ZXCURSED'">Album</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <nav>
+        <div class="nav-brand">
+            <a th:href="@{/}">ZXCURSED Lyrics</a>
+        </div>
+        <div class="nav-search">
+            <form th:action="@{/search}" method="get">
+                <input type="text" name="query" placeholder="Search songs...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <div class="nav-auth">
+            <div sec:authorize="isAuthenticated()">
+                <a th:href="@{/profile}">Profile</a>
+                <a th:href="@{/logout}">Logout</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}">Login</a>
+                <a th:href="@{/register}">Register</a>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="album-detail-container">
+    <!-- Заголовок альбома -->
+    <section class="album-header">
+        <img th:src="${album.coverImage}" th:alt="${album.title}" class="album-cover-large">
+        <div class="album-info">
+            <h1 class="album-title" th:text="${album.title}">Album Title</h1>
+            <div class="album-meta">
+                <div class="meta-item" th:if="${album.releaseDate}">
+                    <strong>Release Date:</strong>
+                    <span th:text="${#temporals.format(album.releaseDate, 'dd MMMM yyyy')}"></span>
+                </div>
+                <div class="meta-item">
+                    <strong>Songs:</strong>
+                    <span th:text="${songs.size()}">0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Основной контент: песни и описание -->
+    <div class="album-content-layout">
+        <!-- Левая колонка: список песен -->
+        <div class="songs-section">
+            <div class="section-header">
+                <h2>Songs in this Album</h2>
+                <div class="songs-count" th:text="'(' + ${songs.size()} + ' songs)'"></div>
+            </div>
+            <div class="songs-list">
+                <div th:each="song : ${songs}" class="song-item">
+                    <a th:href="@{/song/{id}(id=${song.id})}" th:text="${song.title}"></a>
+                </div>
+                <div th:if="${songs.empty}" class="no-songs">
+                    <p>No songs in this album yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: описание альбома -->
+        <div class="album-description-section">
+            <div class="description-card">
+                <h3>Album Description</h3>
+                <div class="album-description">
+                    <p th:if="${album.description}" th:text="${album.description}"></p>
+                    <div th:unless="${album.description}" class="no-description">
+                        <div class="no-content-icon">ℹ️</div>
+                        <p>No description available for this album.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Секция комментариев -->
+    <div class="comments-section">
+        <div class="section-header">
+            <h3>Community Discussion</h3>
+            <div class="comments-count" th:text="'(' + ${comments.size()} + ' comments)'"></div>
+        </div>
+
+        <!-- Форма добавления комментария -->
+        <div sec:authorize="isAuthenticated()" class="comment-form">
+            <form th:action="@{/album/{id}/comment(id=${album.id})}" method="post">
+                <div class="form-header">
+                    <strong>Add your comment</strong>
+                    <span class="char-count">0/1000</span>
+                </div>
+                <textarea name="text" placeholder="Share your thoughts about this album..."
+                          required maxlength="1000" id="commentText"></textarea>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Post Comment</button>
+                </div>
+            </form>
+        </div>
+
+        <div sec:authorize="!isAuthenticated()" class="login-prompt">
+            <div class="login-icon">🔒</div>
+            <p>
+                <a th:href="@{/login}">Log in</a> to join the discussion and share your thoughts
+            </p>
+        </div>
+
+        <!-- Список комментариев -->
+        <div class="comments-list">
+            <div th:each="comment : ${comments}" class="comment-item">
+                <div class="comment-avatar">
+                    <img th:if="${comment.user.profilePicture}" th:src="${comment.user.profilePicture}" alt="Avatar">
+                    <img th:unless="${comment.user.profilePicture}" th:src="@{/images/default-avatar.jpg}" alt="Avatar">
+                </div>
+                <div class="comment-content">
+                    <div class="comment-header">
+                        <div class="comment-user-info">
+                            <a th:href="@{/user/{username}(username=${comment.user.username})}" class="comment-user-link" th:text="${comment.user.username}">User</a>
+                            <span class="comment-date"
+                                  th:text="${#temporals.format(comment.createdAt, 'dd MMM yyyy, HH:mm')}">
+                                    Date
+                                </span>
+                        </div>
+                        <div class="comment-actions" sec:authorize="isAuthenticated()">
+                                <span th:if="${#authentication.principal.username == comment.user.username}">
+                                    <form th:action="@{/album/comment/{id}/delete(id=${comment.id})}" method="post" style="display: inline;">
+                                        <button type="submit" class="btn-delete" onclick="return confirm('Are you sure you want to delete this comment?')">Delete</button>
+                                    </form>
+                                </span>
+                        </div>
+                    </div>
+                    <div class="comment-text" th:text="${comment.text}"></div>
+                </div>
+            </div>
+
+            <div th:if="${comments.empty}" class="no-comments">
+                <div class="no-comments-icon">💬</div>
+                <h4>No comments yet</h4>
+                <p>Be the first to share your thoughts about this album!</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // Счетчик символов для комментария
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.getElementById('commentText');
+        const charCount = document.querySelector('.char-count');
+
+        if (textarea && charCount) {
+            textarea.addEventListener('input', function() {
+                const length = this.value.length;
+                charCount.textContent = length + '/1000';
+
+                if (length > 1000) {
+                    charCount.style.color = '#e74c3c';
+                } else if (length > 800) {
+                    charCount.style.color = '#f39c12';
+                } else {
+                    charCount.style.color = '#666';
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
